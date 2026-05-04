@@ -5,6 +5,8 @@ from cuos.schemas.document import ParsedDocument
 
 
 class ParserAdapter(ABC):
+    name: str
+
     @abstractmethod
-    def parse(self, file_path: Path, output_dir: Path) -> ParsedDocument:
+    def parse(self, source_path: Path, output_dir: Path) -> ParsedDocument:
         raise NotImplementedError
