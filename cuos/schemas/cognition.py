@@ -2,10 +2,28 @@ from pydantic import BaseModel, Field
 
 
 class ProblemModel(BaseModel):
-    doc_id: str
-    problem: str
-    motivation: str
-    key_claims: list[str] = Field(default_factory=list)
+    central_problem: str
+    why_important: str
+    prior_methods: list[str] = Field(default_factory=list)
+    gap: str
+    core_claims: list[str] = Field(default_factory=list)
+    core_mechanism: str
+    key_evidence_candidates: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
+    reading_strategy: str
+
+
+class KeyQuestion(BaseModel):
+    question_type: str
+    question: str
+
+
+class QuestionSet(BaseModel):
+    questions: list[KeyQuestion] = Field(default_factory=list)
+
+
+class ReadingMap(BaseModel):
+    steps: list[str] = Field(default_factory=list)
 
 
 class SessionState(BaseModel):

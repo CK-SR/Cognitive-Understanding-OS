@@ -7,6 +7,8 @@ from cuos.schemas.document import ParsedDocument
 
 def run_ingest(file_path: Path, papers_dir: Path, parser: ParserAdapter, db_path: Path | None = None) -> ParsedDocument:
     parsed = parser.parse(source_path=file_path, output_dir=papers_dir)
+    paper_dir = Path(parsed.markdown_path).parent
+    (paper_dir / "parsed_document.json").write_text(parsed.model_dump_json(indent=2), encoding="utf-8")
     if db_path is not None:
         conn = sqlite3.connect(db_path)
         conn.execute(
