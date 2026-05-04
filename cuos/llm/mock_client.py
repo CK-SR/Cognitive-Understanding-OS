@@ -17,7 +17,10 @@ class MockLLMClient(LLMClient):
                 "depth_score": 0.6,
                 "transfer_score": 0.5,
                 "issues": ["Need clearer mechanism explanation"],
+                "missing_evidence": ["b3"],
+                "corrected_understanding": "Mechanism must be connected to explicit evidence blocks.",
                 "follow_up_question": "Why sparse encoder helps?",
+                "suggested_understanding_level": "L2",
             }
         return {}
     def chat_text(self, messages: list[dict], **kwargs: object) -> str:
@@ -63,4 +66,18 @@ class MockLLMClient(LLMClient):
             return QuestionSet(questions=[])
         if name == "ReadingMap":
             return ReadingMap(steps=["Read abstract", "Read method", "Read evidence"])
+        if name == "AuditResult":
+            return schema_model.model_validate(
+                {
+                    "accuracy_score": 0.8,
+                    "completeness_score": 0.7,
+                    "depth_score": 0.6,
+                    "transfer_score": 0.5,
+                    "issues": ["Need clearer mechanism explanation"],
+                    "missing_evidence": ["b3"],
+                    "corrected_understanding": "Mechanism must be connected to explicit evidence blocks.",
+                    "follow_up_question": "Why sparse encoder helps?",
+                    "suggested_understanding_level": "L2",
+                }
+            )
         return schema_model.model_validate({})

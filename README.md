@@ -1,8 +1,25 @@
-# CUOS (Phase 3 LLM + Map)
+# CUOS (Phase 4 Session/Audit/Review)
 
-## 配置 OpenAI-compatible LLM
+## 快速使用流程
 
-在 `config.yaml` 中配置：
+```bash
+python -m cuos.cli init
+python -m cuos.cli ingest xxx.pdf --parser mock
+python -m cuos.cli map <paper_id> --llm mock
+python -m cuos.cli session <paper_id>
+python -m cuos.cli audit <paper_id> --session <session_id> --llm mock
+python -m cuos.cli review --llm mock
+```
+
+按论文过滤复习任务：
+
+```bash
+python -m cuos.cli review --paper <paper_id> --llm mock
+```
+
+## 真实 LLM 配置
+
+在 `config.yaml` 中配置 OpenAI-compatible：
 
 ```yaml
 llm:
@@ -18,32 +35,16 @@ llm:
 export CUOS_LLM_API_KEY=your_key
 ```
 
-## 使用 Mock LLM
+## Phase 4 输出文件
 
-```yaml
-llm:
-  provider: mock
-```
+- `sessions/<session_id>.json` / `.md`
+- `cognitive/audit_report.md`
+- `cognitive/follow_up_questions.md`
+- `cognitive/understanding_state.json`
+- `cognitive/review_tasks.json`
 
-可离线跑通 `map` 阶段。
+## Prompt 列表
 
-## map 阶段输出
-
-- `problem_model.json`：问题骨架。
-- `candidate_graph.json`：候选理解图谱（nodes/edges）。
-- `key_questions.json` / `key_questions.md`：第一轮苏格拉底追问。
-- `reading_map.md`：阅读路径建议。
-
-## candidate_graph.json 字段说明
-
-- `nodes[].source_blocks`：节点来源证据块。
-- `edges[].source_blocks`：边生成来源块。
-- `edges[].evidence_blocks`：边支撑证据块。
-- `edges[].human_verified`：是否人工确认。
-- `edges[].llm_confidence`：模型置信度。
-
-## 为什么业务 prompt 外置
-
-- 避免把业务策略硬编码在 Python 中。
-- 便于版本化迭代 prompt。
-- 降低代码变更频率，提升可审计性。
+- `prompts/answer_audit.md`：回答审计
+- `prompts/review.md`：复习提问（后续可扩展）
+- `prompts/socratic_question.md`：问题生成
