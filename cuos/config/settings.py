@@ -6,7 +6,12 @@ from pydantic import BaseModel
 
 class ParserSettings(BaseModel):
     default: str = "mock"
-    adapters: dict[str, str] = {"mock": "cuos.parsers.mock_parser:MockParser"}
+    adapters: dict[str, dict] = {
+        "mock": {},
+        "docling": {"python_module": "docling"},
+        "marker": {"command": "marker_single", "extra_args": []},
+        "mineru": {"command": "magic-pdf", "extra_args": []},
+    }
 
 
 class LLMSettings(BaseModel):

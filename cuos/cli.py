@@ -7,7 +7,8 @@ from rich import print
 
 from cuos.config.settings import Settings
 from cuos.llm.mock_client import MockLLMClient
-from cuos.parsers.mock_parser import MockParser
+from cuos.parsers.errors import ParserError
+from cuos.parsers.factory import get_parser
 from cuos.pipeline.audit import run_audit
 from cuos.pipeline.build_map import run_map
 from cuos.pipeline.ingest import run_ingest
@@ -17,12 +18,13 @@ from cuos.storage.sqlite_store import SQLiteStore
 from cuos.storage.workspace import init_workspace
 
 app = typer.Typer()
-state = {"config_path": Path("config.yaml")}
+state = {"config_path": Path("config.yaml"), "debug": False}
 
 
 @app.callback()
-def main(config: Path = typer.Option(Path("config.yaml"), "--config")) -> None:
+def main(config: Path = typer.Option(Path("config.yaml"), "--config"), debug: bool = typer.Option(False, "--debug")) -> None:
     state["config_path"] = config
+    state["debug"] = debug
 
 
 def _settings() -> Settings:
@@ -40,11 +42,20 @@ def init() -> None:
 
 
 @app.command()
-def ingest(pdf_path: str, parser: str = typer.Option("mock", "--parser")) -> None:
+def ingest(pdf_path: str, parser: str | None = typer.Option(None, "--parser")) -> None:
     cfg = _settings()
     workspace = Path(cfg.workspace_dir).resolve()
-    parsed = run_ingest(Path(pdf_path), workspace / "papers", MockParser())
-    print(f"[green]Ingested[/green] {pdf_path} -> {parsed.doc_id}")
+    parser_name = parser or cfg.parser.default
+    parser_cfg = cfg.parser.adapters.get(parser_name, {})
+    try:
+        adapter = get_parser(parser_name, parser_cfg)
+        parsed = run_ingest(Path(pdf_path), workspace / "papers", adapter, db_path=workspace / "cuos.db")
+    except ParserError as exc:
+        if state["debug"]:
+            raise
+        print(f"[red]Parser error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    print(f"[green]Ingested[/green] {pdf_path} -> {parsed.doc_id} ({parser_name})")
 
 
 @app.command("map")
