@@ -24,6 +24,7 @@ class CognitiveEdge(BaseModel):
         "solves", "motivates", "contrasts_with", "depends_on", "derives_from", "supports", "tests", "measured_by",
         "shown_in", "contradicts", "limits", "assumes", "transfers_to", "unclear_about"
     ]
+    source_blocks: list[str] = Field(default_factory=list)
     evidence_blocks: list[str] = Field(default_factory=list)
     llm_confidence: float | None = None
     human_verified: bool = False

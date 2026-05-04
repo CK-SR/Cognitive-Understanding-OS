@@ -6,7 +6,7 @@ import yaml
 from rich import print
 
 from cuos.config.settings import Settings
-from cuos.llm.mock_client import MockLLMClient
+from cuos.llm.factory import get_llm_client
 from cuos.parsers.errors import ParserError
 from cuos.parsers.factory import get_parser
 from cuos.pipeline.audit import run_audit
@@ -59,9 +59,12 @@ def ingest(pdf_path: str, parser: str | None = typer.Option(None, "--parser")) -
 
 
 @app.command("map")
-def map_cmd(paper_id: str) -> None:
+def map_cmd(paper_id: str, llm: str | None = typer.Option(None, "--llm")) -> None:
     cfg = _settings()
-    run_map(Path(cfg.workspace_dir).resolve() / "papers" / paper_id, MockLLMClient())
+    if llm:
+        cfg.llm.provider = llm
+    client = get_llm_client(cfg.llm)
+    run_map(Path(cfg.workspace_dir).resolve() / "papers" / paper_id, client, Path(cfg.prompts.dir))
     print(f"[green]Mapped[/green] {paper_id}")
 
 
@@ -84,7 +87,7 @@ def audit(paper_id: str) -> None:
     if not session_files:
         raise typer.BadParameter("No session found. Run session first.")
     latest = json.loads(session_files[-1].read_text(encoding="utf-8"))
-    run_audit(paper_dir, latest["answer"], MockLLMClient())
+    run_audit(paper_dir, latest["answer"], get_llm_client(cfg.llm))
     print(f"[green]Audit completed[/green] {paper_id}")
 
 

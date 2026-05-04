@@ -1,7 +1,17 @@
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
+from typing import Protocol
+
+from pydantic import BaseModel
 
 
-class LLMClient(ABC):
-    @abstractmethod
-    def generate_json(self, task_type: str, prompt_id: str, variables: dict) -> dict:
-        raise NotImplementedError
+class LLMOutputValidationError(ValueError):
+    """Raised when LLM output cannot be validated against target schema."""
+
+
+class LLMClient(Protocol):
+    def chat_text(self, messages: list[dict], **kwargs: object) -> str:
+        ...
+
+    def chat_json(self, messages: list[dict], schema_model: type[BaseModel], **kwargs: object) -> BaseModel:
+        ...
