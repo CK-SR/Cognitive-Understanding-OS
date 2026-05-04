@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 import typer
@@ -72,32 +71,31 @@ def map_cmd(paper_id: str, llm: str | None = typer.Option(None, "--llm")) -> Non
 def session(paper_id: str) -> None:
     cfg = _settings()
     paper_dir = Path(cfg.workspace_dir).resolve() / "papers" / paper_id
-    questions = (paper_dir / "cognitive" / "key_questions.md").read_text(encoding="utf-8")
-    print("[bold]Candidate Questions[/bold]\n" + questions)
-    answer = typer.prompt("Your answer")
-    saved = run_session(paper_dir, answer)
-    print(f"Saved session: {saved}")
+    session_id = run_session(paper_dir)
+    print(f"Saved session: {session_id}")
+    print(f"Next: cuos audit {paper_id} --session {session_id}")
 
 
 @app.command()
-def audit(paper_id: str) -> None:
+def audit(paper_id: str, session: str = typer.Option(..., "--session"), llm: str | None = typer.Option(None, "--llm")) -> None:
     cfg = _settings()
+    if llm:
+        cfg.llm.provider = llm
     paper_dir = Path(cfg.workspace_dir).resolve() / "papers" / paper_id
-    session_files = sorted((paper_dir / "sessions").glob("session_*.json"))
-    if not session_files:
-        raise typer.BadParameter("No session found. Run session first.")
-    latest = json.loads(session_files[-1].read_text(encoding="utf-8"))
-    run_audit(paper_dir, latest["answer"], get_llm_client(cfg.llm))
+    run_audit(paper_dir, session, get_llm_client(cfg.llm), prompt_dir=Path(cfg.prompts.dir), db_path=Path(cfg.workspace_dir).resolve() / "cuos.db")
     print(f"[green]Audit completed[/green] {paper_id}")
 
 
 @app.command()
-def review() -> None:
+def review(paper: str | None = typer.Option(None, "--paper"), llm: str | None = typer.Option(None, "--llm")) -> None:
     cfg = _settings()
-    store = SQLiteStore(Path(cfg.workspace_dir).resolve() / "cuos.db")
-    tasks = run_review(store)
-    print("[bold]Today review tasks[/bold]")
-    for t in tasks:
+    if llm:
+        cfg.llm.provider = llm
+    workspace = Path(cfg.workspace_dir).resolve()
+    store = SQLiteStore(workspace / "cuos.db")
+    completed = run_review(workspace, store, get_llm_client(cfg.llm), Path(cfg.prompts.dir), paper_id=paper)
+    print("[bold]Completed review tasks[/bold]")
+    for t in completed:
         print(f"- {t}")
 
 

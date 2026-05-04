@@ -28,8 +28,16 @@ class ReadingMap(BaseModel):
 
 class SessionState(BaseModel):
     paper_id: str
-    questions: list[str] = Field(default_factory=list)
-    latest_answer_path: str | None = None
+    session_id: str
+    current_state: str
+    turns: list["SessionTurn"] = Field(default_factory=list)
+
+
+class SessionTurn(BaseModel):
+    state: str
+    question: str
+    answer: str
+    related_source_blocks: list[str] = Field(default_factory=list)
 
 
 class UserAnswer(BaseModel):
@@ -50,3 +58,4 @@ class UnderstandingState(BaseModel):
     paper_id: str
     level: str
     weak_points: list[str] = Field(default_factory=list)
+    updated_from_session: str | None = None
