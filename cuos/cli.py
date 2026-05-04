@@ -3,6 +3,7 @@ from pathlib import Path
 import typer
 import yaml
 from rich import print
+from rich.table import Table
 
 from cuos.config.settings import Settings
 from cuos.llm.factory import get_llm_client
@@ -38,6 +39,7 @@ def init() -> None:
     if not state["config_path"].exists():
         state["config_path"].write_text(yaml.safe_dump(cfg.model_dump(), sort_keys=False), encoding="utf-8")
     print(f"[green]Workspace initialized:[/green] {workspace}")
+    print(f"[cyan]Config file:[/cyan] {state['config_path'].resolve()}")
 
 
 @app.command()
@@ -52,9 +54,13 @@ def ingest(pdf_path: str, parser: str | None = typer.Option(None, "--parser")) -
     except ParserError as exc:
         if state["debug"]:
             raise
-        print(f"[red]Parser error:[/red] {exc}")
+        print(f"[red]Parser error:[/red] {exc}. Try --parser mock or verify parser dependencies.")
         raise typer.Exit(code=2) from exc
-    print(f"[green]Ingested[/green] {pdf_path} -> {parsed.doc_id} ({parser_name})")
+    table = Table(title="Ingest Result")
+    table.add_column("paper_id")
+    table.add_column("output_dir")
+    table.add_row(parsed.doc_id, str((workspace / 'papers' / parsed.doc_id).resolve()))
+    print(table)
 
 
 @app.command("map")
@@ -62,18 +68,22 @@ def map_cmd(paper_id: str, llm: str | None = typer.Option(None, "--llm")) -> Non
     cfg = _settings()
     if llm:
         cfg.llm.provider = llm
-    client = get_llm_client(cfg.llm)
-    run_map(Path(cfg.workspace_dir).resolve() / "papers" / paper_id, client, Path(cfg.prompts.dir))
-    print(f"[green]Mapped[/green] {paper_id}")
+    paper_dir = Path(cfg.workspace_dir).resolve() / "papers" / paper_id
+    run_map(paper_dir, get_llm_client(cfg.llm), Path(cfg.prompts.dir))
+    print(f"[green]Map completed:[/green] {(paper_dir / 'cognitive').resolve()}")
 
 
 @app.command()
-def session(paper_id: str) -> None:
+def session(paper_id: str, non_interactive_demo: bool = typer.Option(False, "--non-interactive-demo")) -> None:
     cfg = _settings()
     paper_dir = Path(cfg.workspace_dir).resolve() / "papers" / paper_id
-    session_id = run_session(paper_dir)
-    print(f"Saved session: {session_id}")
-    print(f"Next: cuos audit {paper_id} --session {session_id}")
+    session_id = run_session(paper_dir, non_interactive_demo=non_interactive_demo)
+    table = Table(title="Session Result")
+    table.add_column("paper_id")
+    table.add_column("session_id")
+    table.add_row(paper_id, session_id)
+    print(table)
+    print(f"[cyan]Output:[/cyan] {(paper_dir / 'sessions' / f'{session_id}.json').resolve()}")
 
 
 @app.command()
@@ -83,20 +93,22 @@ def audit(paper_id: str, session: str = typer.Option(..., "--session"), llm: str
         cfg.llm.provider = llm
     paper_dir = Path(cfg.workspace_dir).resolve() / "papers" / paper_id
     run_audit(paper_dir, session, get_llm_client(cfg.llm), prompt_dir=Path(cfg.prompts.dir), db_path=Path(cfg.workspace_dir).resolve() / "cuos.db")
-    print(f"[green]Audit completed[/green] {paper_id}")
+    print(f"[green]Audit completed:[/green] {(paper_dir / 'cognitive' / 'audit_report.md').resolve()}")
 
 
 @app.command()
-def review(paper: str | None = typer.Option(None, "--paper"), llm: str | None = typer.Option(None, "--llm")) -> None:
+def review(paper: str | None = typer.Option(None, "--paper"), llm: str | None = typer.Option(None, "--llm"), non_interactive_demo: bool = typer.Option(False, "--non-interactive-demo")) -> None:
     cfg = _settings()
     if llm:
         cfg.llm.provider = llm
     workspace = Path(cfg.workspace_dir).resolve()
     store = SQLiteStore(workspace / "cuos.db")
-    completed = run_review(workspace, store, get_llm_client(cfg.llm), Path(cfg.prompts.dir), paper_id=paper)
-    print("[bold]Completed review tasks[/bold]")
-    for t in completed:
-        print(f"- {t}")
+    completed = run_review(workspace, store, get_llm_client(cfg.llm), Path(cfg.prompts.dir), paper_id=paper, non_interactive_demo=non_interactive_demo)
+    table = Table(title="Review Completed Tasks")
+    table.add_column("task_id")
+    for task_id in completed:
+        table.add_row(task_id)
+    print(table)
 
 
 if __name__ == "__main__":
