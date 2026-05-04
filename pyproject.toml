@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cuos"
 version = "0.1.0"
-description = "Cognitive Understanding OS skeleton"
+description = "Cognitive Understanding OS CLI MVP"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -13,10 +13,17 @@ dependencies = [
   "rich>=13.7",
   "pydantic>=2.7",
   "pyyaml>=6.0",
+  "networkx>=3.3",
+  "questionary>=2.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+openai = ["openai>=1.0"]
+docling = ["docling>=2.0"]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.scripts]
+cuos = "cuos.cli:app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

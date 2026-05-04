@@ -10,7 +10,7 @@ from cuos.schemas.cognition import UnderstandingState
 from cuos.storage.sqlite_store import SQLiteStore
 
 
-def run_review(workspace_dir: Path, store: SQLiteStore, llm, prompt_dir: Path, paper_id: str | None = None) -> list[str]:
+def run_review(workspace_dir: Path, store: SQLiteStore, llm, prompt_dir: Path, paper_id: str | None = None, non_interactive_demo: bool = False) -> list[str]:
     tasks = store.list_due_tasks(date.today().isoformat(), paper_id=paper_id)
     registry = PromptRegistry(prompt_dir)
     prompt_template = registry.load("answer_audit.md")
@@ -18,14 +18,17 @@ def run_review(workspace_dir: Path, store: SQLiteStore, llm, prompt_dir: Path, p
 
     for task in tasks:
         print(f"\n[{task.paper_id}] {task.question}")
-        print("请输入回答（空行结束）：")
-        lines: list[str] = []
-        while True:
-            line = input()
-            if line == "":
-                break
-            lines.append(line)
-        answer = "\n".join(lines).strip()
+        if non_interactive_demo:
+            answer = "这是用于 smoke test 的演示回答。"
+        else:
+            print("请输入回答（空行结束）：")
+            lines: list[str] = []
+            while True:
+                line = input()
+                if line == "":
+                    break
+                lines.append(line)
+            answer = "\n".join(lines).strip()
 
         prompt = prompt_template.replace("{{question}}", task.question).replace("{{user_answer}}", answer)
         prompt = prompt.replace("{{related_source_blocks}}", "[]").replace("{{candidate_graph_context}}", "{}")

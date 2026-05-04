@@ -1,0 +1,10 @@
+workspace_dir: ./.cuos_workspace
+parser:
+  default: mock
+  adapters:
+    mock: {}
+llm:
+  provider: mock
+  model: mock-model
+prompts:
+  dir: ./prompts
