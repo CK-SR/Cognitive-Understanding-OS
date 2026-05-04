@@ -1,0 +1,12 @@
+workspace_dir: ./.cuos_workspace
+parser:
+  default: mock
+  adapters:
+    mock: cuos.parsers.mock_parser:MockParser
+llm:
+  provider: mock
+  base_url: http://localhost:11434/v1
+  model: mock-model
+  api_key_env: OPENAI_API_KEY
+prompts:
+  dir: ./prompts
