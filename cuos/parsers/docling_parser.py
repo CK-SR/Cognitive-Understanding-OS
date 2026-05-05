@@ -5,7 +5,8 @@ from typing import Any
 
 from cuos.parsers.base import ParserAdapter
 from cuos.parsers.errors import ParserDependencyError
-from cuos.schemas.document import DocumentBlock, ParsedDocument
+from cuos.parsers.markdown_utils import markdown_to_blocks
+from cuos.schemas.document import ParsedDocument
 
 
 class DoclingParser(ParserAdapter):
@@ -32,7 +33,7 @@ class DoclingParser(ParserAdapter):
         md_path = paper_dir / "full.md"
         md_path.write_text(markdown_text, encoding="utf-8")
 
-        blocks = _markdown_blocks(markdown_text)
+        blocks = markdown_to_blocks(markdown_text, assets_dir=assets_dir)
         structure_path = paper_dir / "structure.json"
         structure_path.write_text(
             json.dumps([b.model_dump() for b in blocks], ensure_ascii=False, indent=2),
@@ -43,8 +44,9 @@ class DoclingParser(ParserAdapter):
             "parser_name": self.name,
             "degraded": True,
             "warnings": [
-                "Docling adapter fallback: markdown-only block extraction in this version."
+                "Docling adapter fallback: Markdown-only extraction in this version. It now classifies headings, formulas, tables, figures, and captions heuristically."
             ],
+            "normalized_block_types": sorted({block.type for block in blocks}),
         }
         (paper_dir / "parse_report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -59,11 +61,3 @@ class DoclingParser(ParserAdapter):
             assets_dir=str(assets_dir),
             blocks=blocks,
         )
-
-
-def _markdown_blocks(markdown_text: str) -> list[DocumentBlock]:
-    lines = [line.strip() for line in markdown_text.splitlines() if line.strip()]
-    return [
-        DocumentBlock(block_id=f"b{i}", type="paragraph", text=line, page=1)
-        for i, line in enumerate(lines, start=1)
-    ]

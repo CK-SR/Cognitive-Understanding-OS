@@ -11,3 +11,7 @@ llm:
   timeout: 120
 prompts:
   dir: ./prompts
+map:
+  max_input_chars: 120000
+language:
+  interaction_language: zh-CN

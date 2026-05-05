@@ -3,7 +3,8 @@ import uuid
 from pathlib import Path
 
 from cuos.parsers.base import ParserAdapter
-from cuos.schemas.document import DocumentBlock, ParsedDocument
+from cuos.parsers.markdown_utils import markdown_to_blocks
+from cuos.schemas.document import ParsedDocument
 
 
 class MockParser(ParserAdapter):
@@ -19,21 +20,27 @@ class MockParser(ParserAdapter):
         (paper_dir / raw_name).write_text(text, encoding="utf-8")
         (paper_dir / "full.md").write_text(text, encoding="utf-8")
 
-        blocks = [
-            DocumentBlock(block_id=f"b{i}", type="paragraph", text=line, page=1)
-            for i, line in enumerate(
-                [line_text for line_text in text.splitlines() if line_text.strip()],
-                start=1,
-            )
-        ]
+        assets_dir = paper_dir / "assets"
+        assets_dir.mkdir(exist_ok=True)
+        blocks = markdown_to_blocks(text, assets_dir=assets_dir)
         structure_path = paper_dir / "structure.json"
         structure_path.write_text(
             json.dumps([b.model_dump() for b in blocks], ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-        (paper_dir / "assets").mkdir(exist_ok=True)
         (paper_dir / "parse_report.json").write_text(
-            json.dumps({"status": "ok", "parser": "mock"}, indent=2), encoding="utf-8"
+            json.dumps(
+                {
+                    "status": "ok",
+                    "parser": "mock",
+                    "warnings": [
+                        "Mock parser uses heuristic Markdown block extraction."
+                    ],
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
         )
 
         return ParsedDocument(
@@ -42,6 +49,6 @@ class MockParser(ParserAdapter):
             source_path=str(source_path),
             markdown_path=str(paper_dir / "full.md"),
             structure_path=str(structure_path),
-            assets_dir=str(paper_dir / "assets"),
+            assets_dir=str(assets_dir),
             blocks=blocks,
         )

@@ -1,9 +1,13 @@
-# Prompt ID: cuos.problem_model.v2
+# Prompt ID: cuos.problem_model.v3
 # Task: Build a problem-level understanding model from a paper-like Markdown document.
 # Required output schema: ProblemModel
 # Required output: JSON object only. No Markdown, no commentary, no code fence.
 
-You are a strict cognitive reading analyst. Your job is not to summarize the document superficially, but to extract the paper's "problem model": what problem it attacks, why it matters, what prior approaches miss, what claims it makes, what mechanism it proposes, what evidence should be inspected, and where the limits are.
+You are a strict cognitive reading analyst. Your job is not to summarize the document superficially, but to extract the paper's problem model: what problem it attacks, why it matters, what prior approaches miss, what claims it makes, what mechanism it proposes, what evidence should be inspected, and where the limits are.
+
+## Interaction language
+
+Use {{interaction_language}} as the main output language. In normal use this is Chinese. The source document may be English. Keep original English technical terms, method names, dataset names, metric names, model names, and formula symbols when necessary. Prefer the format: 中文解释（English term）. Do not translate identifiers, equations, dataset names, model names, or cited method names.
 
 The downstream system will validate your output with this exact schema:
 
@@ -44,7 +48,7 @@ Bad:
 "Graph learning."
 
 Good:
-"The paper tries to improve graph learning under low-resource conditions where existing heavy models require too much data and compute."
+"论文试图解决低资源条件下图学习（graph learning）模型依赖大量数据和算力、难以稳定部署的问题。"
 
 ### why_important
 Explain why solving the problem matters in research or engineering terms. Include consequences such as cost, accuracy, deployment difficulty, reliability, interpretability, safety, or transfer.
@@ -52,7 +56,7 @@ Explain why solving the problem matters in research or engineering terms. Includ
 ### prior_methods
 List 2-6 prior approaches, baselines, common practices, or implicit old routes mentioned or implied by the document.
 If the document does not clearly mention prior methods, infer conservatively and mark uncertainty in the wording, for example:
-"Possibly prior route: manual feature engineering, not explicitly detailed."
+"可能的旧路线：manual feature engineering，原文未充分展开。"
 
 ### gap
 Explain the gap between the problem and prior methods. This should be the reason a new method is needed.
@@ -87,7 +91,7 @@ Do not invent dramatic flaws. Be conservative and evidence-aware.
 ### reading_strategy
 Give a compact reading plan for the human reader. It should identify the order in which to inspect sections and what to verify.
 It should be practical, for example:
-"First inspect the introduction to confirm the problem/gap, then read the method for the risk score definition, then check experiments and ablations to see whether the claimed mechanism is directly tested."
+"先确认 Introduction 中的问题和 gap，再读 Method 中的 risk score 定义，随后检查 Experiments/Ablation 是否直接验证该机制，最后看 Limitations 是否限制工程部署。"
 
 ## Strict output rules
 
@@ -97,7 +101,7 @@ It should be practical, for example:
 4. Do not add fields outside the schema.
 5. If information is missing, use cautious wording rather than fabricating details.
 6. Keep each string concise but specific.
-7. The output language should follow the document language. If the document is mostly Chinese, output Chinese. If mostly English, output English.
+7. Use {{interaction_language}} as the main output language, while preserving important English technical terms.
 
 ## Document Markdown
 

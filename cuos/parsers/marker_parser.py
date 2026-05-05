@@ -11,7 +11,8 @@ from cuos.parsers.errors import (
     ParserExecutionError,
     ParserOutputError,
 )
-from cuos.schemas.document import DocumentBlock, ParsedDocument
+from cuos.parsers.markdown_utils import markdown_to_blocks
+from cuos.schemas.document import ParsedDocument
 
 
 class MarkerParser(ParserAdapter):
@@ -41,14 +42,18 @@ class MarkerParser(ParserAdapter):
                 f"Marker execution failed (code={proc.returncode}): {proc.stderr.strip() or proc.stdout.strip()}"
             )
 
-        parsed = _normalize_output(paper_dir, raw_dir, command, proc.returncode)
+        parsed = _normalize_output(paper_dir, raw_dir, source_path, command, proc.returncode)
         if not parsed.blocks:
             raise ParserOutputError("Marker parser produced no content blocks.")
         return parsed
 
 
 def _normalize_output(
-    paper_dir: Path, raw_dir: Path, command: str, return_code: int
+    paper_dir: Path,
+    raw_dir: Path,
+    source_path: Path,
+    command: str,
+    return_code: int,
 ) -> ParsedDocument:
     markdown_candidates = list(raw_dir.rglob("*.md"))
     json_candidates = list(raw_dir.rglob("*.json"))
@@ -60,19 +65,17 @@ def _normalize_output(
     md_dst = paper_dir / "full.md"
     md_dst.write_text(markdown_text, encoding="utf-8")
 
-    blocks = [
-        DocumentBlock(block_id=f"b{i}", type="paragraph", text=t, page=1)
-        for i, t in enumerate(
-            [
-                line_text.strip()
-                for line_text in markdown_text.splitlines()
-                if line_text.strip()
-            ],
-            1,
-        )
-    ]
+    assets_dir = paper_dir / "assets"
+    assets_dir.mkdir(exist_ok=True)
+    for img in raw_dir.rglob("*"):
+        if img.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".svg"}:
+            shutil.copy2(img, assets_dir / img.name)
+
+    blocks = markdown_to_blocks(markdown_text, assets_dir=assets_dir)
 
     structure_dst = paper_dir / "structure.json"
+    # Preserve original parser JSON when available, but ensure ParsedDocument.blocks
+    # has CUOS-normalized Markdown blocks with formula/table/figure types.
     if json_candidates:
         structure_dst.write_text(
             json_candidates[0].read_text(encoding="utf-8", errors="ignore"),
@@ -84,12 +87,6 @@ def _normalize_output(
             encoding="utf-8",
         )
 
-    assets_dir = paper_dir / "assets"
-    assets_dir.mkdir(exist_ok=True)
-    for img in raw_dir.rglob("*"):
-        if img.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".svg"}:
-            shutil.copy2(img, assets_dir / img.name)
-
     report = {
         "parser_name": "marker",
         "command": command,
@@ -97,7 +94,8 @@ def _normalize_output(
         "degraded": not bool(json_candidates),
         "warnings": []
         if json_candidates
-        else ["No JSON structure found; downgraded to markdown-based blocks."],
+        else ["No JSON structure found; downgraded to heuristic Markdown blocks."],
+        "normalized_block_types": sorted({block.type for block in blocks}),
     }
     (paper_dir / "parse_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -106,7 +104,7 @@ def _normalize_output(
     return ParsedDocument(
         doc_id=paper_dir.name,
         title=blocks[0].text if blocks else None,
-        source_path="",
+        source_path=str(source_path),
         markdown_path=str(md_dst),
         structure_path=str(structure_dst),
         assets_dir=str(assets_dir),

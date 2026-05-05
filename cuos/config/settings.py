@@ -1,17 +1,19 @@
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ParserSettings(BaseModel):
     default: str = "mock"
-    adapters: dict[str, dict] = {
-        "mock": {},
-        "docling": {"python_module": "docling"},
-        "marker": {"command": "marker_single", "extra_args": []},
-        "mineru": {"command": "magic-pdf", "extra_args": []},
-    }
+    adapters: dict[str, dict] = Field(
+        default_factory=lambda: {
+            "mock": {},
+            "docling": {"python_module": "docling"},
+            "marker": {"command": "marker_single", "extra_args": []},
+            "mineru": {"command": "magic-pdf", "extra_args": []},
+        }
+    )
 
 
 class LLMSettings(BaseModel):
@@ -27,11 +29,26 @@ class PromptSettings(BaseModel):
     dir: str = "./prompts"
 
 
+class MapSettings(BaseModel):
+    # V1 uses characters rather than tokens. 120k chars is still below the
+    # practical context budget of long-context models, while avoiding the old
+    # 12k-char truncation that dropped methods/experiments.
+    max_input_chars: int = 120000
+
+
+class LanguageSettings(BaseModel):
+    # Source PDFs may be English, but the user interaction and cognitive audit
+    # should default to Chinese.
+    interaction_language: str = "zh-CN"
+
+
 class Settings(BaseModel):
     workspace_dir: str = "./.cuos_workspace"
-    parser: ParserSettings = ParserSettings()
-    llm: LLMSettings = LLMSettings()
-    prompts: PromptSettings = PromptSettings()
+    parser: ParserSettings = Field(default_factory=ParserSettings)
+    llm: LLMSettings = Field(default_factory=LLMSettings)
+    prompts: PromptSettings = Field(default_factory=PromptSettings)
+    map: MapSettings = Field(default_factory=MapSettings)
+    language: LanguageSettings = Field(default_factory=LanguageSettings)
 
     @classmethod
     def from_file(cls, path: Path) -> "Settings":

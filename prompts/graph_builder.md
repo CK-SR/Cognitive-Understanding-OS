@@ -1,4 +1,4 @@
-# Prompt ID: cuos.graph_builder.v2
+# Prompt ID: cuos.graph_builder.v3
 # Task: Build a candidate cognitive graph from a paper problem model and document Markdown.
 # Required output schema: CognitiveGraph
 # Required output: JSON object only. No Markdown, no commentary, no code fence.
@@ -6,6 +6,10 @@
 You are a strict cognitive graph builder. Your job is to build a candidate "understanding graph" for a human reader, not a generic entity knowledge graph.
 
 The graph should reveal how the paper's problem, claims, mechanisms, formulas, experiments, results, figures, tables, assumptions, limitations, and applications support or constrain each other.
+
+## Interaction language
+
+Use {{interaction_language}} as the main output language. The source document may be English. Keep original English technical terms, method names, dataset names, metric names, model names, and formula symbols when necessary. Prefer the format: 中文解释（English term）. Do not translate identifiers, equations, dataset names, model names, or cited method names.
 
 The downstream system will validate your output with this exact structure:
 
@@ -39,9 +43,9 @@ The downstream system will validate your output with this exact structure:
 
 The current pipeline provides:
 - ProblemModel JSON
-- document Markdown
+- compact document Markdown
 
-It may not provide explicit block ids. If block ids are not visible in the Markdown, use stable synthetic references:
+The parser may provide explicit block ids in later versions, but they may not be visible in the Markdown. If block ids are not visible, use stable synthetic references:
 - "doc:abstract"
 - "doc:introduction"
 - "doc:method"
@@ -163,7 +167,7 @@ Avoid generic graph edges such as:
 3. Do not add fields outside the schema.
 4. All node_id and edge_id values must be unique.
 5. All edges must reference existing nodes.
-6. Use the same language as the input document when possible.
+6. Use {{interaction_language}} as the main output language, while preserving important English technical terms.
 7. If evidence is insufficient, create a Question node rather than inventing certainty.
 
 ## ProblemModel JSON

@@ -11,7 +11,8 @@ from cuos.parsers.errors import (
     ParserExecutionError,
     ParserOutputError,
 )
-from cuos.schemas.document import DocumentBlock, ParsedDocument
+from cuos.parsers.markdown_utils import markdown_to_blocks
+from cuos.schemas.document import ParsedDocument
 
 
 class MineruParser(ParserAdapter):
@@ -34,7 +35,7 @@ class MineruParser(ParserAdapter):
         raw_dir = paper_dir / "raw_mineru"
         raw_dir.mkdir(exist_ok=True)
 
-        cmd = [command,"-p", str(source_path), "-o", str(raw_dir), *extra_args]
+        cmd = [command, "-p", str(source_path), "-o", str(raw_dir), *extra_args]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
             raise ParserExecutionError(
@@ -50,17 +51,13 @@ class MineruParser(ParserAdapter):
         md_dst = paper_dir / "full.md"
         md_dst.write_text(markdown_text, encoding="utf-8")
 
-        blocks = [
-            DocumentBlock(block_id=f"b{i}", type="paragraph", text=t, page=1)
-            for i, t in enumerate(
-                [
-                    line_text.strip()
-                    for line_text in markdown_text.splitlines()
-                    if line_text.strip()
-                ],
-                1,
-            )
-        ]
+        assets_dir = paper_dir / "assets"
+        assets_dir.mkdir(exist_ok=True)
+        for file in raw_dir.rglob("*"):
+            if file.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".svg"}:
+                shutil.copy2(file, assets_dir / file.name)
+
+        blocks = markdown_to_blocks(markdown_text, assets_dir=assets_dir)
 
         json_candidates = list(raw_dir.rglob("*.json"))
         structure_dst = paper_dir / "structure.json"
@@ -79,12 +76,6 @@ class MineruParser(ParserAdapter):
                 encoding="utf-8",
             )
 
-        assets_dir = paper_dir / "assets"
-        assets_dir.mkdir(exist_ok=True)
-        for file in raw_dir.rglob("*"):
-            if file.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".svg"}:
-                shutil.copy2(file, assets_dir / file.name)
-
         report = {
             "parser_name": self.name,
             "command": command,
@@ -92,7 +83,8 @@ class MineruParser(ParserAdapter):
             "degraded": degraded,
             "warnings": []
             if not degraded
-            else ["No structured JSON found; using markdown paragraph blocks."],
+            else ["No structured JSON found; using heuristic Markdown blocks."],
+            "normalized_block_types": sorted({block.type for block in blocks}),
         }
         (paper_dir / "parse_report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"

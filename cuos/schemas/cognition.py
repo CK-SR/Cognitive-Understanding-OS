@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -37,7 +39,10 @@ class SessionTurn(BaseModel):
     state: str
     question: str
     answer: str
-    related_source_blocks: list[str] = Field(default_factory=list)
+    # V1.1: store grounded evidence snippets, not just block ids. This keeps
+    # audit from judging only from the user's answer and a high-level graph.
+    related_source_blocks: list[dict[str, Any]] = Field(default_factory=list)
+    related_node_ids: list[str] = Field(default_factory=list)
 
 
 class UserAnswer(BaseModel):
@@ -59,3 +64,8 @@ class UnderstandingState(BaseModel):
     level: str
     weak_points: list[str] = Field(default_factory=list)
     updated_from_session: str | None = None
+    # Paper-level state above is preserved for compatibility. The following
+    # fields make the understanding state graph-aware.
+    node_levels: dict[str, str] = Field(default_factory=dict)
+    weak_nodes: list[str] = Field(default_factory=list)
+    node_weak_points: dict[str, list[str]] = Field(default_factory=dict)

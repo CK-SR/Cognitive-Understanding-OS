@@ -41,7 +41,8 @@ def init() -> None:
     init_workspace(workspace)
     if not state["config_path"].exists():
         state["config_path"].write_text(
-            yaml.safe_dump(cfg.model_dump(), sort_keys=False), encoding="utf-8"
+            yaml.safe_dump(cfg.model_dump(), sort_keys=False, allow_unicode=True),
+            encoding="utf-8",
         )
     print(f"[green]Workspace initialized:[/green] {workspace}")
     print(f"[cyan]Config file:[/cyan] {state['config_path'].resolve()}")
@@ -73,13 +74,32 @@ def ingest(pdf_path: str, parser: str | None = typer.Option(None, "--parser")) -
 
 
 @app.command("map")
-def map_cmd(paper_id: str, llm: str | None = typer.Option(None, "--llm")) -> None:
+def map_cmd(
+    paper_id: str,
+    llm: str | None = typer.Option(None, "--llm"),
+    max_input_chars: int | None = typer.Option(
+        None,
+        "--max-input-chars",
+        help="Maximum compact Markdown characters sent to map-stage LLM calls.",
+    ),
+    interaction_language: str | None = typer.Option(
+        None,
+        "--interaction-language",
+        help="Language used for problem model, graph content, and questions.",
+    ),
+) -> None:
     cfg = _settings()
     if llm:
         cfg.llm.provider = llm
     paper_dir = Path(cfg.workspace_dir).resolve() / "papers" / paper_id
     try:
-        run_map(paper_dir, get_llm_client(cfg.llm), Path(cfg.prompts.dir))
+        run_map(
+            paper_dir,
+            get_llm_client(cfg.llm),
+            Path(cfg.prompts.dir),
+            max_input_chars=max_input_chars or cfg.map.max_input_chars,
+            interaction_language=interaction_language or cfg.language.interaction_language,
+        )
     except FileNotFoundError as exc:
         if state["debug"]:
             raise

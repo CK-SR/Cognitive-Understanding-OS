@@ -6,6 +6,11 @@ parser:
     mineru:
       command: mineru
       extra_args: []
+    marker:
+      command: marker_single
+      extra_args: []
+    docling:
+      python_module: docling
 llm:
   provider: openai-compatible
   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
@@ -15,3 +20,7 @@ llm:
   timeout: 1800
 prompts:
   dir: ./prompts
+map:
+  max_input_chars: 120000
+language:
+  interaction_language: zh-CN
