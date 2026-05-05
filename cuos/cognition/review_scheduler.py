@@ -6,7 +6,9 @@ from uuid import uuid4
 from cuos.schemas.cognition import ReviewTask
 
 
-def build_review_tasks(paper_id: str, start_date: date | None = None) -> list[ReviewTask]:
+def build_review_tasks(
+    paper_id: str, start_date: date | None = None
+) -> list[ReviewTask]:
     anchor = start_date or date.today()
     schedule = [
         (1, "中心问题复述：不看原文，复述本文要解决的核心问题与价值。"),

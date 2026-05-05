@@ -21,4 +21,6 @@ def get_parser(name: str, config: Mapping[str, Any] | None = None) -> ParserAdap
         return MarkerParser(parser_config)
     if parser_name == "mineru":
         return MineruParser(parser_config)
-    raise ParserError(f"Unknown parser '{name}'. Supported parsers: mock, docling, marker, mineru")
+    raise ParserError(
+        f"Unknown parser '{name}'. Supported parsers: mock, docling, marker, mineru"
+    )

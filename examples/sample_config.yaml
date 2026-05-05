@@ -6,5 +6,8 @@ parser:
 llm:
   provider: mock
   model: mock-model
+  api_key_env: DASHSCOPE_API_KEY
+  enable_thinking: false
+  timeout: 120
 prompts:
   dir: ./prompts

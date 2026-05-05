@@ -2,7 +2,9 @@ from cuos.schemas.document import ParsedDocument
 from cuos.schemas.graph import CognitiveGraph, CognitiveNode
 
 
-def validate_graph_references(graph: CognitiveGraph, parsed_doc: ParsedDocument) -> list[str]:
+def validate_graph_references(
+    graph: CognitiveGraph, parsed_doc: ParsedDocument
+) -> list[str]:
     block_ids = {b.block_id for b in parsed_doc.blocks}
     issues: list[str] = []
     for node in graph.nodes:

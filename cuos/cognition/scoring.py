@@ -10,7 +10,9 @@ def determine_understanding_level(audit: AuditResult) -> str:
         level = "L2"
     if audit.completeness_score >= 0.8 and audit.depth_score >= 0.75:
         level = "L3"
-    if audit.depth_score >= 0.85 and any("limit" in issue.lower() for issue in audit.issues):
+    if audit.depth_score >= 0.85 and any(
+        "limit" in issue.lower() for issue in audit.issues
+    ):
         level = "L4"
     if audit.transfer_score >= 0.8:
         level = "L5"

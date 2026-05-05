@@ -6,7 +6,11 @@ from pathlib import Path
 from typing import Any
 
 from cuos.parsers.base import ParserAdapter
-from cuos.parsers.errors import ParserDependencyError, ParserExecutionError, ParserOutputError
+from cuos.parsers.errors import (
+    ParserDependencyError,
+    ParserExecutionError,
+    ParserOutputError,
+)
 from cuos.schemas.document import DocumentBlock, ParsedDocument
 
 
@@ -20,7 +24,9 @@ class MineruParser(ParserAdapter):
         command = self.config.get("command", "magic-pdf")
         extra_args = self.config.get("extra_args", [])
         if shutil.which(command) is None:
-            raise ParserDependencyError(f"MinerU command not found: '{command}'. Please install MinerU/magic-pdf and configure parser.adapters.mineru.command.")
+            raise ParserDependencyError(
+                f"MinerU command not found: '{command}'. Please install MinerU/magic-pdf and configure parser.adapters.mineru.command."
+            )
 
         paper_id = f"paper_{uuid.uuid4().hex[:8]}"
         paper_dir = output_dir / paper_id
@@ -28,10 +34,12 @@ class MineruParser(ParserAdapter):
         raw_dir = paper_dir / "raw_mineru"
         raw_dir.mkdir(exist_ok=True)
 
-        cmd = [command, str(source_path), "-o", str(raw_dir), *extra_args]
+        cmd = [command,"-p", str(source_path), "-o", str(raw_dir), *extra_args]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
-            raise ParserExecutionError(f"MinerU execution failed (code={proc.returncode}): {proc.stderr.strip() or proc.stdout.strip()}")
+            raise ParserExecutionError(
+                f"MinerU execution failed (code={proc.returncode}): {proc.stderr.strip() or proc.stdout.strip()}"
+            )
 
         markdown_candidates = list(raw_dir.rglob("*.md"))
         if not markdown_candidates:
@@ -42,16 +50,34 @@ class MineruParser(ParserAdapter):
         md_dst = paper_dir / "full.md"
         md_dst.write_text(markdown_text, encoding="utf-8")
 
-        blocks = [DocumentBlock(block_id=f"b{i}", type="paragraph", text=t, page=1) for i, t in enumerate([line_text.strip() for line_text in markdown_text.splitlines() if line_text.strip()], 1)]
+        blocks = [
+            DocumentBlock(block_id=f"b{i}", type="paragraph", text=t, page=1)
+            for i, t in enumerate(
+                [
+                    line_text.strip()
+                    for line_text in markdown_text.splitlines()
+                    if line_text.strip()
+                ],
+                1,
+            )
+        ]
 
         json_candidates = list(raw_dir.rglob("*.json"))
         structure_dst = paper_dir / "structure.json"
         degraded = True
         if json_candidates:
-            structure_dst.write_text(json_candidates[0].read_text(encoding="utf-8", errors="ignore"), encoding="utf-8")
+            structure_dst.write_text(
+                json_candidates[0].read_text(encoding="utf-8", errors="ignore"),
+                encoding="utf-8",
+            )
             degraded = False
         else:
-            structure_dst.write_text(json.dumps([b.model_dump() for b in blocks], ensure_ascii=False, indent=2), encoding="utf-8")
+            structure_dst.write_text(
+                json.dumps(
+                    [b.model_dump() for b in blocks], ensure_ascii=False, indent=2
+                ),
+                encoding="utf-8",
+            )
 
         assets_dir = paper_dir / "assets"
         assets_dir.mkdir(exist_ok=True)
@@ -64,9 +90,13 @@ class MineruParser(ParserAdapter):
             "command": command,
             "return_code": proc.returncode,
             "degraded": degraded,
-            "warnings": [] if not degraded else ["No structured JSON found; using markdown paragraph blocks."],
+            "warnings": []
+            if not degraded
+            else ["No structured JSON found; using markdown paragraph blocks."],
         }
-        (paper_dir / "parse_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        (paper_dir / "parse_report.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
         return ParsedDocument(
             doc_id=paper_id,

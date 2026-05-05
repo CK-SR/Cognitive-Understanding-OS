@@ -18,7 +18,9 @@ class LLMSettings(BaseModel):
     provider: str = "mock"
     base_url: str = ""
     model: str = "mock-model"
-    api_key_env: str = "OPENAI_API_KEY"
+    api_key_env: str = "DASHSCOPE_API_KEY"
+    enable_thinking: bool = False
+    timeout: int = 120
 
 
 class PromptSettings(BaseModel):

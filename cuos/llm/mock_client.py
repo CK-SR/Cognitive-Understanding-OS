@@ -8,7 +8,6 @@ from cuos.schemas.graph import CognitiveGraph
 
 
 class MockLLMClient(LLMClient):
-
     def generate_json(self, task_type: str, prompt_id: str, variables: dict) -> dict:
         if task_type == "audit":
             return {
@@ -23,10 +22,13 @@ class MockLLMClient(LLMClient):
                 "suggested_understanding_level": "L2",
             }
         return {}
+
     def chat_text(self, messages: list[dict], **kwargs: object) -> str:
         return "mock-text"
 
-    def chat_json(self, messages: list[dict], schema_model: type[BaseModel], **kwargs: object) -> BaseModel:
+    def chat_json(
+        self, messages: list[dict], schema_model: type[BaseModel], **kwargs: object
+    ) -> BaseModel:
         name = schema_model.__name__
         if name == "ProblemModel":
             return ProblemModel(
@@ -45,8 +47,18 @@ class MockLLMClient(LLMClient):
                 {
                     "doc_id": "mock-doc",
                     "nodes": [
-                        {"node_id": "n1", "type": "Problem", "content": "Low-resource graph learning", "source_blocks": ["b1"]},
-                        {"node_id": "n2", "type": "Claim", "content": "Improves F1", "source_blocks": ["b3"]},
+                        {
+                            "node_id": "n1",
+                            "type": "Problem",
+                            "content": "Low-resource graph learning",
+                            "source_blocks": ["b1"],
+                        },
+                        {
+                            "node_id": "n2",
+                            "type": "Claim",
+                            "content": "Improves F1",
+                            "source_blocks": ["b3"],
+                        },
                     ],
                     "edges": [
                         {

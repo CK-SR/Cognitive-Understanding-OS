@@ -1,12 +1,17 @@
 workspace_dir: ./.cuos_workspace
 parser:
-  default: mock
+  default: mineru
   adapters:
-    mock: cuos.parsers.mock_parser:MockParser
+    mock: {}
+    mineru:
+      command: mineru
+      extra_args: []
 llm:
-  provider: mock
-  base_url: http://localhost:11434/v1
-  model: mock-model
-  api_key_env: OPENAI_API_KEY
+  provider: openai-compatible
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  model: qwen3.6-max-preview
+  api_key_env: DASHSCOPE_API_KEY
+  enable_thinking: true
+  timeout: 1800
 prompts:
   dir: ./prompts

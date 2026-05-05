@@ -34,14 +34,21 @@ class DoclingParser(ParserAdapter):
 
         blocks = _markdown_blocks(markdown_text)
         structure_path = paper_dir / "structure.json"
-        structure_path.write_text(json.dumps([b.model_dump() for b in blocks], ensure_ascii=False, indent=2), encoding="utf-8")
+        structure_path.write_text(
+            json.dumps([b.model_dump() for b in blocks], ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
 
         report = {
             "parser_name": self.name,
             "degraded": True,
-            "warnings": ["Docling adapter fallback: markdown-only block extraction in this version."],
+            "warnings": [
+                "Docling adapter fallback: markdown-only block extraction in this version."
+            ],
         }
-        (paper_dir / "parse_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        (paper_dir / "parse_report.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
         return ParsedDocument(
             doc_id=paper_id,
@@ -56,4 +63,7 @@ class DoclingParser(ParserAdapter):
 
 def _markdown_blocks(markdown_text: str) -> list[DocumentBlock]:
     lines = [line.strip() for line in markdown_text.splitlines() if line.strip()]
-    return [DocumentBlock(block_id=f"b{i}", type="paragraph", text=line, page=1) for i, line in enumerate(lines, start=1)]
+    return [
+        DocumentBlock(block_id=f"b{i}", type="paragraph", text=line, page=1)
+        for i, line in enumerate(lines, start=1)
+    ]

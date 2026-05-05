@@ -21,12 +21,20 @@ class MockParser(ParserAdapter):
 
         blocks = [
             DocumentBlock(block_id=f"b{i}", type="paragraph", text=line, page=1)
-            for i, line in enumerate([line_text for line_text in text.splitlines() if line_text.strip()], start=1)
+            for i, line in enumerate(
+                [line_text for line_text in text.splitlines() if line_text.strip()],
+                start=1,
+            )
         ]
         structure_path = paper_dir / "structure.json"
-        structure_path.write_text(json.dumps([b.model_dump() for b in blocks], ensure_ascii=False, indent=2), encoding="utf-8")
+        structure_path.write_text(
+            json.dumps([b.model_dump() for b in blocks], ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
         (paper_dir / "assets").mkdir(exist_ok=True)
-        (paper_dir / "parse_report.json").write_text(json.dumps({"status": "ok", "parser": "mock"}, indent=2), encoding="utf-8")
+        (paper_dir / "parse_report.json").write_text(
+            json.dumps({"status": "ok", "parser": "mock"}, indent=2), encoding="utf-8"
+        )
 
         return ParsedDocument(
             doc_id=paper_id,

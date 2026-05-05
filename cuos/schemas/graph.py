@@ -6,9 +6,25 @@ from pydantic import BaseModel, Field
 class CognitiveNode(BaseModel):
     node_id: str
     type: Literal[
-        "Problem", "Motivation", "PriorWork", "Gap", "Claim", "Concept", "Mechanism", "Formula", "Module",
-        "Experiment", "Metric", "Result", "Figure", "Table", "Evidence", "Limitation", "Assumption",
-        "Application", "Question"
+        "Problem",
+        "Motivation",
+        "PriorWork",
+        "Gap",
+        "Claim",
+        "Concept",
+        "Mechanism",
+        "Formula",
+        "Module",
+        "Experiment",
+        "Metric",
+        "Result",
+        "Figure",
+        "Table",
+        "Evidence",
+        "Limitation",
+        "Assumption",
+        "Application",
+        "Question",
     ]
     content: str
     source_blocks: list[str] = Field(default_factory=list)
@@ -21,8 +37,20 @@ class CognitiveEdge(BaseModel):
     source: str
     target: str
     relation: Literal[
-        "solves", "motivates", "contrasts_with", "depends_on", "derives_from", "supports", "tests", "measured_by",
-        "shown_in", "contradicts", "limits", "assumes", "transfers_to", "unclear_about"
+        "solves",
+        "motivates",
+        "contrasts_with",
+        "depends_on",
+        "derives_from",
+        "supports",
+        "tests",
+        "measured_by",
+        "shown_in",
+        "contradicts",
+        "limits",
+        "assumes",
+        "transfers_to",
+        "unclear_about",
     ]
     source_blocks: list[str] = Field(default_factory=list)
     evidence_blocks: list[str] = Field(default_factory=list)
