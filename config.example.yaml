@@ -6,6 +6,11 @@ parser:
     mineru:
       command: mineru
       extra_args: []
+      # Remote API mode: set server_url to call external MinerU/vLLM service
+      server_url: ""
+      backend: ""
+      api_key: ""
+      timeout: 600
     marker:
       command: marker_single
       extra_args: []

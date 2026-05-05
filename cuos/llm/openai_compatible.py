@@ -91,6 +91,7 @@ class OpenAICompatibleLLMClient(LLMClient):
                 },
             ]
             t1 = time.monotonic()
+            latency_ms2 = 0
             try:
                 repaired = self.chat_text(repair_messages, **kwargs)
                 latency_ms2 = int((time.monotonic() - t1) * 1000)

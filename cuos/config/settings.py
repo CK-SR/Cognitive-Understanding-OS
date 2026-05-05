@@ -11,7 +11,14 @@ class ParserSettings(BaseModel):
             "mock": {},
             "docling": {"python_module": "docling"},
             "marker": {"command": "marker_single", "extra_args": []},
-            "mineru": {"command": "magic-pdf", "extra_args": []},
+            "mineru": {
+                "command": "magic-pdf",
+                "extra_args": [],
+                "server_url": "",
+                "backend": "",
+                "api_key": "",
+                "timeout": 600,
+            },
         }
     )
 

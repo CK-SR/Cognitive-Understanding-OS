@@ -21,6 +21,44 @@ class MineruParser(ParserAdapter):
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         self.config = config or {}
 
+    @property
+    def _server_url(self) -> str:
+        return self.config.get("server_url", "")
+
+    @property
+    def _backend(self) -> str:
+        return self.config.get("backend", "")
+
+    @property
+    def _api_key(self) -> str:
+        return self.config.get("api_key", "")
+
+    def _build_remote_cmd(
+        self, source_path: Path, output_dir: Path, extra_args: list[str]
+    ) -> list[str]:
+        command = self.config.get("command", "mineru")
+        backend = self._backend or "vlm-http-client"
+        cmd = [
+            command,
+            "-p",
+            str(source_path),
+            "-o",
+            str(output_dir),
+            "-b",
+            backend,
+            "-u",
+            self._server_url,
+        ]
+        if self._api_key:
+            cmd.extend(["--api-key", self._api_key])
+        cmd.extend(extra_args)
+        return cmd
+
+    def _build_local_cmd(
+        self, command: str, source_path: Path, output_dir: Path, extra_args: list[str]
+    ) -> list[str]:
+        return [command, "-p", str(source_path), "-o", str(output_dir), *extra_args]
+
     def parse(self, source_path: Path, output_dir: Path) -> ParsedDocument:
         command = self.config.get("command", "magic-pdf")
         extra_args = self.config.get("extra_args", [])
@@ -35,8 +73,13 @@ class MineruParser(ParserAdapter):
         raw_dir = paper_dir / "raw_mineru"
         raw_dir.mkdir(exist_ok=True)
 
-        cmd = [command, "-p", str(source_path), "-o", str(raw_dir), *extra_args]
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if self._server_url:
+            cmd = self._build_remote_cmd(source_path, raw_dir, extra_args)
+        else:
+            cmd = self._build_local_cmd(command, source_path, raw_dir, extra_args)
+
+        timeout = self.config.get("timeout", 600)
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         if proc.returncode != 0:
             raise ParserExecutionError(
                 f"MinerU execution failed (code={proc.returncode}): {proc.stderr.strip() or proc.stdout.strip()}"
